@@ -197,8 +197,21 @@ class imgActs(object):
         ui.setupUi(self.window)
         self.window.ui = ui
 
+
         # TODO: привязать кнопки
+        self.window.ui.coderBtn.clicked.connect(self.pfCoder)
+        self.window.ui.decoderBtn.clicked.connect(self.pfDecoder)
         self.window.show()
+
+    def pfCoder(self):
+        obj = self.window.ui
+        dct = dict()
+        ln = obj.lnDict.text().split('')
+        ph = obj.lnPhrase.text().split('')
+        tr = obj.lnTerm.text()
+
+    def pfDecoder(self):
+        pass
 
     def cfHor(self):
         """Ширина матрицы"""
@@ -250,3 +263,24 @@ class imgActs(object):
         draw = ImageDraw.Draw(self.crOutput)
         pix = self.workon.load()
         return draw, pix
+
+
+class cdSmb:
+
+    num = 0
+    p = 0
+
+    def __init__(self, nm):
+        self.name = nm
+        self.l = self.__class__.num * self.__class__.p
+        self.__class__.num += 1
+        self.h = self.__class__.num * self.__class__.p
+
+    def isIn(self, cd):
+        if (cd < self.h) and (cd >= self.l):
+            return True
+        else:
+            return False
+
+    def __repr__(self):
+        return '{0}: {1} - {2}'.format(self.name, self.l, self.h)
