@@ -20,7 +20,7 @@ class Ui_imgProcUI(imgActs, object):
 
         imgProcUI.setSizePolicy(sizePolicy)
         imgProcUI.setMinimumSize(QtCore.QSize(1500, 852))
-        imgProcUI.setMaximumSize(QtCore.QSize(1500, 852))
+        # imgProcUI.setMaximumSize(QtCore.QSize(1500, 852))
         self.centralwidget = QtWidgets.QWidget(imgProcUI)
 
         # centralwidget size: was .Maximum
@@ -34,6 +34,7 @@ class Ui_imgProcUI(imgActs, object):
         self.centralwidget.setSizePolicy(sizePolicy)
         self.centralwidget.setObjectName("centralwidget")
         self.gridLayoutWidget = QtWidgets.QWidget(self.centralwidget)
+        # TODO: попробовать поставить переменные
         self.gridLayoutWidget.setGeometry(QtCore.QRect(7, 7, 1490, 792))
         self.gridLayoutWidget.setObjectName("gridLayoutWidget")
         self.gridLayout = QtWidgets.QGridLayout(self.gridLayoutWidget)
@@ -187,7 +188,7 @@ class Ui_imgProcUI(imgActs, object):
         QtCore.QMetaObject.connectSlotsByName(imgProcUI)
 
         self.ddrawHist()
-        # self.test_resize()
+        self.MainWindow.resizeEvent = self.resizeEvent
 
     def retranslateUi(self, imgProcUI):
         _translate = QtCore.QCoreApplication.translate
@@ -219,9 +220,10 @@ class Ui_imgProcUI(imgActs, object):
         self.actCrFilter.setText(_translate("imgProcUI", "Задать фильтр"))
         self.actCoder.setText(_translate("imgProcUI", "Арифметическое кодирование"))
 
-    def test_resize(self):
-        self.MainWindow.resize(2000, 900)
-        self.gridLayoutWidget.setGeometry(QtCore.QRect(7, 7, 1990, 860))
+    def resizeEvent(self, *args, **kwargs):
+        s = self.MainWindow.size()
+        self.gridLayoutWidget.setGeometry(QtCore.QRect(7, 7, s.width() - 10, s.height() - 60))
+        QtWidgets.QWidget.resizeEvent(self.MainWindow, *args, **kwargs)
 
 
 def test_image_out(window):
