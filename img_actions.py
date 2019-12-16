@@ -190,7 +190,27 @@ class imgActs(object):
         self.window.ui.gaussBtn.clicked.connect(self.pfGauss)
         self.window.show()
 
+    def ariphmeticCoding(self, msg: str) -> 'cdSmb':
+        res = cdSmb(0, 1)
+
+        for i in msg:
+            h = res.l + (res.h - res.l) * self.dct[i].h
+            l = res.l + (res.h - res.l) * self.dct[i].l
+            res.l, res.h = l, h
+        return res
+
+    def ariphmeticDecoding(self, code: float) -> str:
+        res = ''
+        while len(res) == 0 or res[-1] != '!':
+            for i in self.dct:
+                if self.dct[i].isIn(code):
+                    res += i
+                    print(i, self.dct[i].l, self.dct[i].h, code)
+                    code = (code - self.dct[i].l) / (self.dct[i].h - self.dct[i].l)
+        return res
+
     def crtCoder(self):
+        """Окно для кодирования"""
         # TODO: изменить создание окна
         self.window = QWidget()
         ui = Ui_Coder()
@@ -204,14 +224,40 @@ class imgActs(object):
         self.window.show()
 
     def pfCoder(self):
+        """Арифметическое кодирование"""
+
+        # TODO: не перезаписывать словарь, если фраза не изменилась
+        # Подготовка
         obj = self.window.ui
-        dct = dict()
-        ln = obj.lnDict.text().split('')
-        ph = obj.lnPhrase.text().split('')
-        tr = obj.lnTerm.text()
+        self.dct = dict()
+        letters = obj.lnDict.text()
+        phrase = obj.lnPhrase.text()
+        self.trm = obj.lnTerm.text()
+        probability = 1 / (len(letters) + 1)
+        l = 0.
+
+        # Собираем словарь символов
+        for chr in letters:
+            r = round(l + probability, 3)
+            self.dct[chr] = cdSmb(l, r)
+            l = r
+
+        # Добавляем терминальный символ
+        self.dct[self.trm] = cdSmb(l, 1.)
+
+        # Кодирование и вывод
+        obj.lnResCode.setText(self.ariphmeticCoding(phrase).__repr__())
+
 
     def pfDecoder(self):
-        pass
+        """Арифметическое декодирование"""
+
+        # Подготовка
+        obj = self.window.ui
+        code = float(obj.lnCode.text())
+
+        # Декодирование и вывод результата
+        obj.lnResDecoder.setText(self.ariphmeticDecoding(code))
 
     def cfHor(self):
         """Ширина матрицы"""
@@ -266,21 +312,19 @@ class imgActs(object):
 
 
 class cdSmb:
+    """Интервал для символа на отрезке [0, 1)"""
+    def __init__(self, l, h):
+        """Инициализация"""
+        self.l = l
+        self.h = h
 
-    num = 0
-    p = 0
-
-    def __init__(self, nm):
-        self.name = nm
-        self.l = self.__class__.num * self.__class__.p
-        self.__class__.num += 1
-        self.h = self.__class__.num * self.__class__.p
+    def __repr__(self):
+        """Вывод в терминал"""
+        return '({0}; {1})'.format(self.l, self.h)
 
     def isIn(self, cd):
+        """Проверка вхождения"""
         if (cd < self.h) and (cd >= self.l):
             return True
         else:
             return False
-
-    def __repr__(self):
-        return '{0}: {1} - {2}'.format(self.name, self.l, self.h)
