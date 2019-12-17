@@ -87,6 +87,11 @@ class Ui_imgProcUI(imgActs, object):
         self.clBtn.setObjectName("clBtn")
         self.clBtn.clicked.connect(self._clear)
         self.gridLayout.addWidget(self.clBtn, 4, 2, 1, 1)
+        self.useBtn = QtWidgets.QPushButton(self.gridLayoutWidget)
+        self.useBtn.setObjectName("useBtn")
+        # TODO: connect button
+        # self.useBtn.clicked.connect(self._clear)
+        self.gridLayout.addWidget(self.useBtn, 4, 1, 1, 1)
         self.label4 = QtWidgets.QLabel(self.gridLayoutWidget)
         self.label4.setObjectName("label4")
         self.gridLayout.addWidget(self.label4, 2, 2, 1, 1)
@@ -131,6 +136,10 @@ class Ui_imgProcUI(imgActs, object):
         self.mnFilter.setObjectName("mnFilter")
         self.mnCoder = QtWidgets.QMenu(self.menubar)
         self.mnCoder.setObjectName("mnCoder")
+        self.mnBinarization = QtWidgets.QMenu(self.menubar)
+        self.mnBinarization.setObjectName("mnBinarization")
+        self.mnMorphology = QtWidgets.QMenu(self.menubar)
+        self.mnMorphology.setObjectName("mnMorphology")
         imgProcUI.setMenuBar(self.menubar)
         self.statusbar = QtWidgets.QStatusBar(imgProcUI)
         self.statusbar.setObjectName("statusbar")
@@ -162,12 +171,17 @@ class Ui_imgProcUI(imgActs, object):
         self.actEqualization.setObjectName("actEqualization")
         self.actCrFilter = QtWidgets.QAction(imgProcUI,
                                              triggered=self.crtWindow)
-
         self.actCrFilter.setObjectName("actCrFilter")
         self.actCoder = QtWidgets.QAction(imgProcUI,
                                           triggered=self.crtCoder)
-
         self.actCoder.setObjectName("actCoder")
+        # New
+        self.actBinarization = QtWidgets.QAction(imgProcUI,
+                                                 triggered=self.pfBinarization)
+        self.actBinarization.setObjectName("actBinarization")
+        self.actMorphology = QtWidgets.QAction(imgProcUI,
+                                               triggered=self.crtMorphology)  # TODO: another name
+        self.actMorphology.setObjectName("actMorphology")
         self.mnFile.addAction(self.actOpen)
         self.mnFile.addAction(self.actSave)
         self.mnBW.addAction(self.actAveraging)
@@ -178,11 +192,15 @@ class Ui_imgProcUI(imgActs, object):
         self.mnHist.addAction(self.actEqualization)
         self.mnFilter.addAction(self.actCrFilter)
         self.mnCoder.addAction(self.actCoder)
+        self.mnBinarization.addAction(self.actBinarization)
+        self.mnMorphology.addAction(self.actMorphology)
         self.menubar.addAction(self.mnFile.menuAction())
         self.menubar.addAction(self.mnBW.menuAction())
         self.menubar.addAction(self.mnHist.menuAction())
         self.menubar.addAction(self.mnFilter.menuAction())
         self.menubar.addAction(self.mnCoder.menuAction())
+        self.menubar.addAction(self.mnBinarization.menuAction())
+        self.menubar.addAction(self.mnMorphology.menuAction())
 
         self.retranslateUi(imgProcUI)
         QtCore.QMetaObject.connectSlotsByName(imgProcUI)
@@ -199,6 +217,7 @@ class Ui_imgProcUI(imgActs, object):
         self.label2.setText(_translate("imgProcUI", "Обработанное:"))
         self.label1.setText(_translate("imgProcUI", "Исходное:"))
         self.clBtn.setText(_translate("imgProcUI", "Очистить"))
+        self.useBtn.setText(_translate("imgProcUI", "Использовать обработанное изображение"))
         (self.label4.setText(_translate(
             "imgProcUI", "Гистограмма обработанного изображения:")))
         self.mnFile.setTitle(_translate("imgProcUI", "Файл"))
@@ -206,6 +225,9 @@ class Ui_imgProcUI(imgActs, object):
         self.mnHist.setTitle(_translate("imgProcUI", "Гистограмма"))
         self.mnFilter.setTitle(_translate("imgProcUI", "Фильтры"))
         self.mnCoder.setTitle(_translate("imgProcUI", "Кодирование"))
+        self.mnBinarization.setTitle(_translate("imgProcUI", "Бинаризация"))
+        self.mnMorphology.setTitle(_translate("imgProcUI", "Морфология"))
+
         self.actOpen.setText(_translate("imgProcUI", "Открыть"))
         self.actOpen.setShortcut(_translate("imgProcUI", "Ctrl+O"))
         self.actSave.setText(_translate("imgProcUI", "Сохранить"))
@@ -219,6 +241,8 @@ class Ui_imgProcUI(imgActs, object):
         self.actEqualization.setText(_translate("imgProcUI", "Эквализация"))
         self.actCrFilter.setText(_translate("imgProcUI", "Задать фильтр"))
         self.actCoder.setText(_translate("imgProcUI", "Арифметическое кодирование"))
+        self.actBinarization.setText(_translate("imgProcUI", "Пороговая"))
+        self.actMorphology.setText(_translate("imgProcUI", "Задать стр. элемент"))
 
     def resizeEvent(self, *args, **kwargs):
         s = self.MainWindow.size()

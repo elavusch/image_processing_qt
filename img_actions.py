@@ -1,6 +1,7 @@
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
-from PIL import Image, ImageDraw
+# TODO: replace ImageOps
+from PIL import Image, ImageDraw, ImageOps
 from PyQt5.QtWidgets import QFileDialog, QWidget
 from matrix_ui import Ui_Form
 from coder_ui import Ui_Coder
@@ -55,7 +56,7 @@ class imgActs(object):
         ax = self.axIn if p == 0 else self.axOut
         hist = self.iHist if p == 0 else self.oHist
         ax.clear()
-        ax.hist(range(256), bins=256, weights=hst, density=1)
+        ax.hist(range(256), bins=256, weights=hst, density=1, color='gray')
         ax.set_xmargin(0.01)
         hist.draw()
 
@@ -299,6 +300,23 @@ class imgActs(object):
                 tmp[-1].append(self.mtr[j + n * i])
         # преобразовывает правильно
         self.mtr = tmp
+
+    def pfBinarization(self):
+        px = ImageOps.grayscale(self.workon).load()
+        self.crOutput = Image.new('1', self.workon.size)
+        draw = ImageDraw.Draw(self.crOutput)
+
+        for i in range(self.workon.width):
+            for j in range(self.workon.height):
+                # TODO: задавать порог
+                if px[i, j] > 128:
+                    draw.point((i, j), 1)
+        self._print()
+
+    # TODO: another name
+    # TODO: difference between pfFilter and crtMorphology
+    def crtMorphology(self):
+        pass
 
     def prepare(self):
         """Исключить, for_each_px"""
