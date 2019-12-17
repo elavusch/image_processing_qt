@@ -149,7 +149,7 @@ class Ui_imgProcUI(imgActs, object):
                                          triggered=self.open)
         self.actOpen.setObjectName("actOpen")
         self.actSave = QtWidgets.QAction(imgProcUI,
-                                         triggered=self.save)
+                                         triggered=self._save)
         self.actSave.setObjectName("actSave")
         self.actAveraging = QtWidgets.QAction(imgProcUI,
                                               triggered=self.pfAveraging)
@@ -205,6 +205,8 @@ class Ui_imgProcUI(imgActs, object):
         self.retranslateUi(imgProcUI)
         QtCore.QMetaObject.connectSlotsByName(imgProcUI)
 
+        # TODO: убрать позорище
+        self.count = 0
         self.ddrawHist()
         self.MainWindow.resizeEvent = self.resizeEvent
 

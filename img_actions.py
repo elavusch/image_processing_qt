@@ -1,9 +1,11 @@
+import os
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 # TODO: replace ImageOps
 from PIL import Image, ImageDraw, ImageOps
 from PyQt5.QtWidgets import QFileDialog, QWidget
 from matrix_ui import Ui_Form
+from matrix_morph_ui import Morph_Ui
 from coder_ui import Ui_Coder
 from functools import wraps
 
@@ -86,8 +88,11 @@ class imgActs(object):
             cumhist[i] = round(summ * 256)
         return cumhist
 
-    def save(self):
-        pass
+    def _save(self):
+        self.count += 1
+        self.crOutput.save(os.path.join(
+            "C:/Users/elavu/Documents/Анализ изображений/image_processing/image_processing/images",
+            "photo" + str(self.count) + ".jpg"))
 
     def _clear(self):
         self.iLabel.clear()
@@ -128,7 +133,9 @@ class imgActs(object):
                     c = cumhist[num]
                     draw.point((i, j), (c, c, c))
                 else:
-                    num = 256 - pix[i, j]
+                    # num = 256 - pix[i, j]
+                    num = pix[i, j]
+                    # print(num, len(cumhist))
                     c = cumhist[num]
                     draw.point((i, j), c)
 
@@ -309,14 +316,67 @@ class imgActs(object):
         for i in range(self.workon.width):
             for j in range(self.workon.height):
                 # TODO: задавать порог
-                if px[i, j] > 128:
+                if px[i, j] > 100:
                     draw.point((i, j), 1)
         self._print()
 
     # TODO: another name
     # TODO: difference between pfFilter and crtMorphology
     def crtMorphology(self):
-        pass
+        # TODO: изменить создание окна
+        self.window = QWidget()
+        ui = Morph_Ui()
+        ui.setupUi(self.window)
+        self.window.ui = ui
+
+        # TODO: привязать кнопки
+        self.window.ui.confirm.clicked.connect(self.cfMorphology)
+        self.window.ui.lnHor.editingFinished.connect(self.cfHor)
+        self.window.ui.lnVer.editingFinished.connect(self.cfVer)
+        self.window.show()
+
+    def cfMorphology(self):
+        self.mtr = list()
+        obj = self.window.ui
+        m, n = obj.mtx.rowCount(), obj.mtx.columnCount()
+        for i in range(m):
+            for j in range(n):
+                self.mtr.append(float(obj.mtx.item(i, j).text()))
+        self.crtMatrix(m, n)
+        self.window.close()
+        self.pfMorphology()
+
+    def pfMorphology(self):
+        """Проход по пикселам внутри рамки"""
+        # TODO: адаптировать
+        m, n = len(self.mtr), len(self.mtr[0])
+        dx, dy = (n - 1) // 2, (m - 1) // 2
+        tmp = Image.new(self.workon.mode,
+                        (self.workon.width + (2 * dx),
+                         self.workon.height + (2 * dy)))
+        tmp.paste(self.workon, (dx, dy))
+        px = tmp.load()
+
+        self.crOutput = Image.new('1',
+                                  tmp.size)  # self.workon.size)
+        draw = ImageDraw.Draw(self.crOutput)
+        h = tmp.height - dy
+        w = tmp.width - dx
+        for y in range(dy, h):
+            for x in range(dx, w):
+                self.morph(x, y, px, draw)
+        self._print()
+
+    def morph(self, x, y, px, draw):
+        """Применение фильтра"""
+        m, n = len(self.mtr), len(self.mtr[0])
+        dx, dy = (n - 1) // 2, (m - 1) // 2
+        # по всему фильтру
+        # TODO: добавить любой символ
+        if self.mtr[1][1] == px[x, y]:
+            for i in range(m):
+                for j in range(n):
+                    draw.point((x - dx + j, y - dy + i), int(self.mtr[i][j]))
 
     def prepare(self):
         """Исключить, for_each_px"""
