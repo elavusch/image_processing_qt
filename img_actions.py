@@ -12,20 +12,57 @@ from functools import wraps
 
 class imgActs(object):
 
+    ####################################################################################################################
+    ###########################################  Inner   ###############################################################
+    ####################################################################################################################
+
     def open(self):
         # TODO: обработать отмену выбора файла
         filename, _ = QFileDialog.getOpenFileName(self.MainWindow,
                                                   "Open File",
                                                   'images/')
         self.workon = Image.open(filename)
+        self._printIn()
+
+    def _printIn(self):
+        """Вывод исходного изображения"""
         self.iLabel.setPixmap(self.workon.toqpixmap())
         self.iLabel.adjustSize()
+        self.drwHist(self.getHist(self.workon), 0)
 
-        self.drawHist(self.getHist(self.workon), 0)
-
-    def _print(self):
+    def _printOut(self):
+        """Вывод обработанного изображения"""
         self.oLabel.setPixmap(self.crOutput.toqpixmap())
-        self.drawHist(self.getHist(self.crOutput), 1)
+        self.drwHist(self.getHist(self.crOutput), 1)
+
+    def _reuse(self):
+        """Передача выходного изображения на вход"""
+        self.workon = self.crOutput
+        self._printIn()
+
+    def _save(self):
+        self.count += 1
+        self.crOutput.save(os.path.join(
+            "C:/Users/elavu/Documents/Анализ изображений/image_processing/image_processing/images",
+            "photo" + str(self.count)), self.crOutput.mode)
+
+    def _clear(self):
+        self.iLabel.clear()
+        self.oLabel.clear()
+        self.axIn.clear()
+        self.iHist.draw()
+        self.axOut.clear()
+        self.oHist.draw()
+
+    def _prepare(self):
+        """Исключить, for_each_px"""
+        # TODO: исключить
+        self.oLabel.clear()
+        self.crOutput = Image.new(self.workon.mode,
+                                  self.workon.size)
+        draw = ImageDraw.Draw(self.crOutput)
+        pix = self.workon.load()
+        return draw, pix
 
     def for_each_px(function):
         @wraps(function)
@@ -39,10 +76,29 @@ class imgActs(object):
                 for j in range(self.workon.height):
                     rs = function(self, pix[i, j])
                     draw.point((i, j), (rs, rs, rs))
-            self._print()
+            self._printOut()
         return wrapper
 
-    def ddrawHist(self):
+    def filling_mtr(function):
+        @wraps(function)
+        def wrapper(self, *args, **kwargs):
+            """Создание структурирующего элемента"""
+            self.mtr = list()
+            obj = self.window.ui
+            m, n = obj.mtx.rowCount(), obj.mtx.columnCount()
+            for i in range(m):
+                for j in range(n):
+                    self.mtr.append(float(obj.mtx.item(i, j).text()))
+            self.crtMatrix(m, n)
+            self.window.close()
+            function(self)
+        return wrapper
+
+    ####################################################################################################################
+    #######################################  Histogram   ###############################################################
+    ####################################################################################################################
+
+    def _drwFigs(self):
         # TODO: сделать вывод гистограммы
         figIn, figOut = Figure(), Figure()
         figIn.set_tight_layout({'pad': 0,})
@@ -53,7 +109,7 @@ class imgActs(object):
         self.gridLayout.addWidget(self.iHist, 1, 2, 1, 1)
         self.gridLayout.addWidget(self.oHist, 3, 2, 1, 1)
 
-    def drawHist(self, hst, p):
+    def drwHist(self, hst, p):
         # TODO: не менять
         ax = self.axIn if p == 0 else self.axOut
         hist = self.iHist if p == 0 else self.oHist
@@ -88,19 +144,9 @@ class imgActs(object):
             cumhist[i] = round(summ * 256)
         return cumhist
 
-    def _save(self):
-        self.count += 1
-        self.crOutput.save(os.path.join(
-            "C:/Users/elavu/Documents/Анализ изображений/image_processing/image_processing/images",
-            "photo" + str(self.count) + ".jpg"))
-
-    def _clear(self):
-        self.iLabel.clear()
-        self.oLabel.clear()
-        self.axIn.clear()
-        self.iHist.draw()
-        self.axOut.clear()
-        self.oHist.draw()
+    ####################################################################################################################
+    #########################################  Filters   ###############################################################
+    ####################################################################################################################
 
     @for_each_px
     def pfAveraging(self, colors):
@@ -122,9 +168,66 @@ class imgActs(object):
     def pfMin(self, colors):
         return min(colors)
 
+    ####################################################################################################################
+    ##########################################  Create   ###############################################################
+    ####################################################################################################################
+
+    def crtWindow(self, ui_class):
+        # TODO: изменить создание окна
+        self.window = QWidget()
+        ui = ui_class()
+        ui.setupUi(self.window)
+        self.window.ui = ui
+
+    def crtMask(self):
+        """Окно для создания маски фильтра"""
+        self.crtWindow(Ui_Form)
+
+        # buttons
+        self.window.ui.confirm.clicked.connect(self.pfFilter)
+        self.window.ui.lnHor.editingFinished.connect(self.cfHor)
+        self.window.ui.lnVer.editingFinished.connect(self.cfVer)
+        self.window.ui.gaussBtn.clicked.connect(self.pfGauss)
+        self.window.show()
+
+    def crtCoder(self):
+        """Окно для кодирования"""
+        self.crtWindow(Ui_Coder)
+
+        # buttons
+        self.window.ui.coderBtn.clicked.connect(self.pfCoder)
+        self.window.ui.decoderBtn.clicked.connect(self.pfDecoder)
+        self.window.show()
+
+    # TODO: another name
+    # TODO: difference between pfFilter and crtMorphology
+    def crtMorphology(self):
+        """Окно для задания структурирующего элемента"""
+        self.crtWindow(Morph_Ui)
+
+        # buttons
+        self.window.ui.confirm.clicked.connect(self.pfMorphology)
+        self.window.ui.lnHor.editingFinished.connect(self.cfHor)
+        self.window.ui.lnVer.editingFinished.connect(self.cfVer)
+        self.window.show()
+
+    def crtMatrix(self, m, n):
+        """Преобразование в матрицу"""
+        tmp = []
+        for i in range(m):
+            tmp.append([])
+            for j in range(n):
+                tmp[-1].append(self.mtr[j + n * i])
+        # преобразовывает правильно
+        self.mtr = tmp
+
+    ####################################################################################################################
+    #########################################  Perform   ###############################################################
+    ####################################################################################################################
+
     def pfEqualization(self):
         cumhist = self.getCumHist(self.workon)
-        draw, pix = self.prepare()
+        draw, pix = self._prepare()
 
         for i in range(self.workon.width):
             for j in range(self.workon.height):
@@ -133,28 +236,12 @@ class imgActs(object):
                     c = cumhist[num]
                     draw.point((i, j), (c, c, c))
                 else:
-                    # num = 256 - pix[i, j]
                     num = pix[i, j]
-                    # print(num, len(cumhist))
                     c = cumhist[num]
                     draw.point((i, j), c)
+        self._printOut()
 
-        self._print()
-
-    def filter(self, x, y, px, draw):
-        """Применение фильтра"""
-        sr, sg, sb = 0, 0, 0
-        m, n = len(self.mtr), len(self.mtr[0])
-        dx, dy = (n - 1) // 2, (m - 1) // 2
-        # по всему фильтру
-        for i in range(m):
-            for j in range(n):
-                r, g, b = px[x - dx + j, y - dy + i]
-                sr += self.mtr[i][j] * r
-                sg += self.mtr[i][j] * g
-                sb += self.mtr[i][j] * b
-        draw.point((x - 1, y - 1), (round(sr), round(sg), round(sb)))
-
+    @filling_mtr
     def pfFilter(self):
         """Проход по пикселам внутри рамки"""
         m, n = len(self.mtr), len(self.mtr[0])
@@ -175,61 +262,45 @@ class imgActs(object):
         for y in range(dy, h):
             for x in range(dx, w):
                 self.filter(x, y, px, draw)
+        self._printOut()
 
-        self._print()
+    @filling_mtr
+    def pfMorphology(self):
+        """Проход по пикселам внутри рамки"""
+        m, n = len(self.mtr), len(self.mtr[0])
+        dx, dy = (n - 1) // 2, (m - 1) // 2
+
+        # изображение в рамке
+        tmp = Image.new(self.workon.mode,
+                        (self.workon.width + (2 * dx),
+                         self.workon.height + (2 * dy)))
+        tmp.paste(self.workon, (dx, dy))
+
+        # попикселный доступ
+        px = tmp.load()
+
+        # выходное изображение
+        self.crOutput = Image.new('1',
+                                  self.workon.size)
+                                  # tmp.size)
+
+        # поверхность для рисования на выходном изображении
+        draw = ImageDraw.Draw(self.crOutput)
+
+        # сдвиги для правильного прохода
+        h = tmp.height - dy
+        w = tmp.width - dx
+        for y in range(dy, h):
+            for x in range(dx, w):
+                self.morph(x, y, px, draw)
+
+        self._printOut()
 
     def pfGauss(self):
         """Фильтр Гаусса"""
         # TODO: задать фильтр для границ
         # TODO: вывести фильтр в таблицу
         pass
-
-    def crtWindow(self):
-        # TODO: изменить создание окна
-        self.window = QWidget()
-        ui = Ui_Form()
-        ui.setupUi(self.window)
-        self.window.ui = ui
-
-        # TODO: привязать кнопки
-        self.window.ui.confirm.clicked.connect(self.cfMatrix)
-        self.window.ui.lnHor.editingFinished.connect(self.cfHor)
-        self.window.ui.lnVer.editingFinished.connect(self.cfVer)
-        self.window.ui.gaussBtn.clicked.connect(self.pfGauss)
-        self.window.show()
-
-    def ariphmeticCoding(self, msg: str) -> 'cdSmb':
-        res = cdSmb(0, 1)
-
-        for i in msg:
-            h = res.l + (res.h - res.l) * self.dct[i].h
-            l = res.l + (res.h - res.l) * self.dct[i].l
-            res.l, res.h = l, h
-        return res
-
-    def ariphmeticDecoding(self, code: float) -> str:
-        res = ''
-        while len(res) == 0 or res[-1] != '!':
-            for i in self.dct:
-                if self.dct[i].isIn(code):
-                    res += i
-                    print(i, self.dct[i].l, self.dct[i].h, code)
-                    code = (code - self.dct[i].l) / (self.dct[i].h - self.dct[i].l)
-        return res
-
-    def crtCoder(self):
-        """Окно для кодирования"""
-        # TODO: изменить создание окна
-        self.window = QWidget()
-        ui = Ui_Coder()
-        ui.setupUi(self.window)
-        self.window.ui = ui
-
-
-        # TODO: привязать кнопки
-        self.window.ui.coderBtn.clicked.connect(self.pfCoder)
-        self.window.ui.decoderBtn.clicked.connect(self.pfDecoder)
-        self.window.show()
 
     def pfCoder(self):
         """Арифметическое кодирование"""
@@ -256,7 +327,6 @@ class imgActs(object):
         # Кодирование и вывод
         obj.lnResCode.setText(self.ariphmeticCoding(phrase).__repr__())
 
-
     def pfDecoder(self):
         """Арифметическое декодирование"""
 
@@ -266,6 +336,22 @@ class imgActs(object):
 
         # Декодирование и вывод результата
         obj.lnResDecoder.setText(self.ariphmeticDecoding(code))
+
+    def pfBinarization(self):
+        px = ImageOps.grayscale(self.workon).load()
+        self.crOutput = Image.new('1', self.workon.size)
+        draw = ImageDraw.Draw(self.crOutput)
+
+        for i in range(self.workon.width):
+            for j in range(self.workon.height):
+                # TODO: задавать порог
+                if px[i, j] > 128:
+                    draw.point((i, j), 1)
+        self._printOut()
+
+    ####################################################################################################################
+    #########################################  Confirm   ###############################################################
+    ####################################################################################################################
 
     def cfHor(self):
         """Ширина матрицы"""
@@ -287,106 +373,51 @@ class imgActs(object):
             else:
                 pass
 
-    def cfMatrix(self):
-        self.mtr = list()
-        obj = self.window.ui
-        m, n = obj.mtx.rowCount(), obj.mtx.columnCount()
-        for i in range(m):
-            for j in range(n):
-                self.mtr.append(float(obj.mtx.item(i, j).text()))
-        self.crtMatrix(m, n)
-        self.window.close()
-        self.pfFilter()
+    ####################################################################################################################
+    #########################################  Actions   ###############################################################
+    ####################################################################################################################
 
-    def crtMatrix(self, m, n):
-        """Преобразование в матрицу"""
-        tmp = []
-        for i in range(m):
-            tmp.append([])
-            for j in range(n):
-                tmp[-1].append(self.mtr[j + n * i])
-        # преобразовывает правильно
-        self.mtr = tmp
-
-    def pfBinarization(self):
-        px = ImageOps.grayscale(self.workon).load()
-        self.crOutput = Image.new('1', self.workon.size)
-        draw = ImageDraw.Draw(self.crOutput)
-
-        for i in range(self.workon.width):
-            for j in range(self.workon.height):
-                # TODO: задавать порог
-                if px[i, j] > 100:
-                    draw.point((i, j), 1)
-        self._print()
-
-    # TODO: another name
-    # TODO: difference between pfFilter and crtMorphology
-    def crtMorphology(self):
-        # TODO: изменить создание окна
-        self.window = QWidget()
-        ui = Morph_Ui()
-        ui.setupUi(self.window)
-        self.window.ui = ui
-
-        # TODO: привязать кнопки
-        self.window.ui.confirm.clicked.connect(self.cfMorphology)
-        self.window.ui.lnHor.editingFinished.connect(self.cfHor)
-        self.window.ui.lnVer.editingFinished.connect(self.cfVer)
-        self.window.show()
-
-    def cfMorphology(self):
-        self.mtr = list()
-        obj = self.window.ui
-        m, n = obj.mtx.rowCount(), obj.mtx.columnCount()
-        for i in range(m):
-            for j in range(n):
-                self.mtr.append(float(obj.mtx.item(i, j).text()))
-        self.crtMatrix(m, n)
-        self.window.close()
-        self.pfMorphology()
-
-    def pfMorphology(self):
-        """Проход по пикселам внутри рамки"""
-        # TODO: адаптировать
-        m, n = len(self.mtr), len(self.mtr[0])
-        dx, dy = (n - 1) // 2, (m - 1) // 2
-        tmp = Image.new(self.workon.mode,
-                        (self.workon.width + (2 * dx),
-                         self.workon.height + (2 * dy)))
-        tmp.paste(self.workon, (dx, dy))
-        px = tmp.load()
-
-        self.crOutput = Image.new('1',
-                                  tmp.size)  # self.workon.size)
-        draw = ImageDraw.Draw(self.crOutput)
-        h = tmp.height - dy
-        w = tmp.width - dx
-        for y in range(dy, h):
-            for x in range(dx, w):
-                self.morph(x, y, px, draw)
-        self._print()
-
-    def morph(self, x, y, px, draw):
-        """Применение фильтра"""
+    def filter(self, x, y, px, draw):
+        """Фильтр"""
+        sr, sg, sb = 0, 0, 0
         m, n = len(self.mtr), len(self.mtr[0])
         dx, dy = (n - 1) // 2, (m - 1) // 2
         # по всему фильтру
+        for i in range(m):
+            for j in range(n):
+                r, g, b = px[x - dx + j, y - dy + i]
+                sr += self.mtr[i][j] * r
+                sg += self.mtr[i][j] * g
+                sb += self.mtr[i][j] * b
+        draw.point((x - 1, y - 1), (round(sr), round(sg), round(sb)))
+
+    def morph(self, x, y, px, draw):
+        """Морфология"""
+        m, n = len(self.mtr), len(self.mtr[0])
+        dx, dy = (n - 1) // 2, (m - 1) // 2
         # TODO: добавить любой символ
         if self.mtr[1][1] == px[x, y]:
             for i in range(m):
                 for j in range(n):
                     draw.point((x - dx + j, y - dy + i), int(self.mtr[i][j]))
 
-    def prepare(self):
-        """Исключить, for_each_px"""
-        # TODO: исключить
-        self.oLabel.clear()
-        self.crOutput = Image.new(self.workon.mode,
-                                  self.workon.size)
-        draw = ImageDraw.Draw(self.crOutput)
-        pix = self.workon.load()
-        return draw, pix
+    def ariphmeticCoding(self, msg: str) -> 'cdSmb':
+        res = cdSmb(0, 1)
+        for i in msg:
+            h = res.l + (res.h - res.l) * self.dct[i].h
+            l = res.l + (res.h - res.l) * self.dct[i].l
+            res.l, res.h = l, h
+        return res
+
+    def ariphmeticDecoding(self, code: float) -> str:
+        res = ''
+        while len(res) == 0 or res[-1] != '!':
+            for i in self.dct:
+                if self.dct[i].isIn(code):
+                    res += i
+                    print(i, self.dct[i].l, self.dct[i].h, code)
+                    code = (code - self.dct[i].l) / (self.dct[i].h - self.dct[i].l)
+        return res
 
 
 class cdSmb:

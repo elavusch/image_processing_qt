@@ -89,8 +89,7 @@ class Ui_imgProcUI(imgActs, object):
         self.gridLayout.addWidget(self.clBtn, 4, 2, 1, 1)
         self.useBtn = QtWidgets.QPushButton(self.gridLayoutWidget)
         self.useBtn.setObjectName("useBtn")
-        # TODO: connect button
-        # self.useBtn.clicked.connect(self._clear)
+        self.useBtn.clicked.connect(self._reuse)
         self.gridLayout.addWidget(self.useBtn, 4, 1, 1, 1)
         self.label4 = QtWidgets.QLabel(self.gridLayoutWidget)
         self.label4.setObjectName("label4")
@@ -170,7 +169,7 @@ class Ui_imgProcUI(imgActs, object):
                                                  triggered=self.pfEqualization)
         self.actEqualization.setObjectName("actEqualization")
         self.actCrFilter = QtWidgets.QAction(imgProcUI,
-                                             triggered=self.crtWindow)
+                                             triggered=self.crtMask)
         self.actCrFilter.setObjectName("actCrFilter")
         self.actCoder = QtWidgets.QAction(imgProcUI,
                                           triggered=self.crtCoder)
@@ -207,7 +206,7 @@ class Ui_imgProcUI(imgActs, object):
 
         # TODO: убрать позорище
         self.count = 0
-        self.ddrawHist()
+        self._drwFigs()
         self.MainWindow.resizeEvent = self.resizeEvent
 
     def retranslateUi(self, imgProcUI):
