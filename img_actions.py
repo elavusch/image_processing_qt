@@ -27,7 +27,7 @@ class imgActs(object):
     def _printIn(self):
         """Вывод исходного изображения"""
         self.iLabel.setPixmap(self.workon.toqpixmap())
-        self.iLabel.adjustSize()
+        # self.iLabel.adjustSize()
         self.drwHist(self.getHist(self.workon), 0)
 
     def _printOut(self):
@@ -94,6 +94,15 @@ class imgActs(object):
             function(self)
         return wrapper
 
+    # TODO: finish
+    def saving_hst(function):
+        @wraps(function)
+        def wrapper(self, *args, **kwargs):
+            """Расчет и сохранение гистограммы workon"""
+            print('It works!')
+            function(self, *args, **kwargs)
+        return wrapper
+
     ####################################################################################################################
     #######################################  Histogram   ###############################################################
     ####################################################################################################################
@@ -118,20 +127,22 @@ class imgActs(object):
         ax.set_xmargin(0.01)
         hist.draw()
 
-    def getHist(self, img):
-        pix = img.load()
+    def getHist(self, img: 'Image') -> 'histogram':
+        """Calculate histogram from image"""
+        px = img.load()
         w, h = img.size
-        hist = [0] * 256
+        hst = [0] * 256
 
         for i in range(w):
             for j in range(h):
-                if type(pix[i, j]) != int:
-                    r, g, b = pix[i, j]
+                if type(px[i, j]) != int:
+                    r, g, b = px[i, j]
                     res = (r + g + b) // 3
                 else:
-                    res = pix[i, j]
-                hist[res] += 1
-        return hist
+                    res = px[i, j]
+                hst[res] += 1
+
+        return hst
 
     def getCumHist(self, img):
         hist = self.getHist(img)
@@ -246,24 +257,25 @@ class imgActs(object):
         """Проход по пикселам внутри рамки"""
         m, n = len(self.mtr), len(self.mtr[0])
         dx, dy = (n - 1) // 2, (m - 1) // 2
-        ext_image = Image.new(self.workon.mode,
+        tmp = Image.new(self.workon.mode,
                               (self.workon.width + (2 * dx),
                                self.workon.height + (2 * dy)))
-        ext_image.paste(self.workon, (dx, dy))
+        tmp.paste(self.workon, (dx, dy))
 
-        px = ext_image.load()
+        px = tmp.load()
 
         self.crOutput = Image.new(self.workon.mode,
                                   self.workon.size)
         draw = ImageDraw.Draw(self.crOutput)
 
-        h = ext_image.height - dy
-        w = ext_image.width - dx
+        h = tmp.height - dy
+        w = tmp.width - dx
         for y in range(dy, h):
             for x in range(dx, w):
                 self.filter(x, y, px, draw)
         self._printOut()
 
+    # TODO: совместить с pfFilter
     @filling_mtr
     def pfMorphology(self):
         """Проход по пикселам внутри рамки"""
@@ -280,9 +292,7 @@ class imgActs(object):
         px = tmp.load()
 
         # выходное изображение
-        self.crOutput = Image.new('1',
-                                  self.workon.size)
-                                  # tmp.size)
+        self.crOutput = Image.new('1', self.workon.size)
 
         # поверхность для рисования на выходном изображении
         draw = ImageDraw.Draw(self.crOutput)
@@ -317,7 +327,7 @@ class imgActs(object):
 
         # Собираем словарь символов
         for chr in letters:
-            r = round(l + probability, 3)
+            r = l + probability
             self.dct[chr] = cdSmb(l, r)
             l = r
 

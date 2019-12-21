@@ -144,62 +144,7 @@ class Ui_imgProcUI(imgActs, object):
         self.statusbar.setObjectName("statusbar")
         imgProcUI.setStatusBar(self.statusbar)
 
-        self.actOpen = QtWidgets.QAction(imgProcUI,
-                                         triggered=self.open)
-        self.actOpen.setObjectName("actOpen")
-        self.actSave = QtWidgets.QAction(imgProcUI,
-                                         triggered=self._save)
-        self.actSave.setObjectName("actSave")
-        self.actAveraging = QtWidgets.QAction(imgProcUI,
-                                              triggered=self.pfAveraging)
-        self.actAveraging.setObjectName("actAveraging")
-        self.actHumanEye = QtWidgets.QAction(imgProcUI,
-                                             triggered=self.pfHumanEye)
-        self.actHumanEye.setObjectName("actHumanEye")
-        self.actDesaturation = QtWidgets.QAction(imgProcUI,
-                                                 triggered=self.pfDesaturation)
-        self.actDesaturation.setObjectName("actDesaturation")
-        self.actMax = QtWidgets.QAction(imgProcUI,
-                                        triggered=self.pfMax)
-        self.actMax.setObjectName("actMax")
-        self.actMin = QtWidgets.QAction(imgProcUI,
-                                        triggered=self.pfMin)
-        self.actMin.setObjectName("actMin")
-        self.actEqualization = QtWidgets.QAction(imgProcUI,
-                                                 triggered=self.pfEqualization)
-        self.actEqualization.setObjectName("actEqualization")
-        self.actCrFilter = QtWidgets.QAction(imgProcUI,
-                                             triggered=self.crtMask)
-        self.actCrFilter.setObjectName("actCrFilter")
-        self.actCoder = QtWidgets.QAction(imgProcUI,
-                                          triggered=self.crtCoder)
-        self.actCoder.setObjectName("actCoder")
-        # New
-        self.actBinarization = QtWidgets.QAction(imgProcUI,
-                                                 triggered=self.pfBinarization)
-        self.actBinarization.setObjectName("actBinarization")
-        self.actMorphology = QtWidgets.QAction(imgProcUI,
-                                               triggered=self.crtMorphology)  # TODO: another name
-        self.actMorphology.setObjectName("actMorphology")
-        self.mnFile.addAction(self.actOpen)
-        self.mnFile.addAction(self.actSave)
-        self.mnBW.addAction(self.actAveraging)
-        self.mnBW.addAction(self.actHumanEye)
-        self.mnBW.addAction(self.actDesaturation)
-        self.mnBW.addAction(self.actMax)
-        self.mnBW.addAction(self.actMin)
-        self.mnHist.addAction(self.actEqualization)
-        self.mnFilter.addAction(self.actCrFilter)
-        self.mnCoder.addAction(self.actCoder)
-        self.mnBinarization.addAction(self.actBinarization)
-        self.mnMorphology.addAction(self.actMorphology)
-        self.menubar.addAction(self.mnFile.menuAction())
-        self.menubar.addAction(self.mnBW.menuAction())
-        self.menubar.addAction(self.mnHist.menuAction())
-        self.menubar.addAction(self.mnFilter.menuAction())
-        self.menubar.addAction(self.mnCoder.menuAction())
-        self.menubar.addAction(self.mnBinarization.menuAction())
-        self.menubar.addAction(self.mnMorphology.menuAction())
+        self.crtMenu()
 
         self.retranslateUi(imgProcUI)
         QtCore.QMetaObject.connectSlotsByName(imgProcUI)
@@ -249,6 +194,83 @@ class Ui_imgProcUI(imgActs, object):
         s = self.MainWindow.size()
         self.gridLayoutWidget.setGeometry(QtCore.QRect(7, 7, s.width() - 10, s.height() - 60))
         QtWidgets.QWidget.resizeEvent(self.MainWindow, *args, **kwargs)
+
+    def crtMenu(self):
+        self.actOpen = QtWidgets.QAction(self.MainWindow,
+                                         triggered=self.open)
+        self.actOpen.setObjectName("actOpen")
+        self.actSave = QtWidgets.QAction(self.MainWindow,
+                                         triggered=self._save)
+        self.actSave.setObjectName("actSave")
+        self.actAveraging = QtWidgets.QAction(self.MainWindow,
+                                              triggered=self.pfAveraging)
+        self.actAveraging.setObjectName("actAveraging")
+        self.actHumanEye = QtWidgets.QAction(self.MainWindow,
+                                             triggered=self.pfHumanEye)
+        self.actHumanEye.setObjectName("actHumanEye")
+        self.actDesaturation = QtWidgets.QAction(self.MainWindow,
+                                                 triggered=self.pfDesaturation)
+        self.actDesaturation.setObjectName("actDesaturation")
+        self.actMax = QtWidgets.QAction(self.MainWindow,
+                                        triggered=self.pfMax)
+        self.actMax.setObjectName("actMax")
+        self.actMin = QtWidgets.QAction(self.MainWindow,
+                                        triggered=self.pfMin)
+        self.actMin.setObjectName("actMin")
+        self.actEqualization = QtWidgets.QAction(self.MainWindow,
+                                                 triggered=self.pfEqualization)
+        self.actEqualization.setObjectName("actEqualization")
+        self.actCrFilter = QtWidgets.QAction(self.MainWindow,
+                                             triggered=self.crtMask)
+        self.actCrFilter.setObjectName("actCrFilter")
+        self.actCoder = QtWidgets.QAction(self.MainWindow,
+                                          triggered=self.crtCoder)
+        self.actCoder.setObjectName("actCoder")
+        # New
+        self.actBinarization = QtWidgets.QAction(self.MainWindow,
+                                                 triggered=self.pfBinarization)
+        self.actBinarization.setObjectName("actBinarization")
+        self.actMorphology = QtWidgets.QAction(self.MainWindow,
+                                               triggered=self.crtMorphology)  # TODO: another name
+        self.actMorphology.setObjectName("actMorphology")
+        self.mnFile.addAction(self.actOpen)
+        self.mnFile.addAction(self.actSave)
+        self.mnBW.addAction(self.actAveraging)
+        self.mnBW.addAction(self.actHumanEye)
+        self.mnBW.addAction(self.actDesaturation)
+        self.mnBW.addAction(self.actMax)
+        self.mnBW.addAction(self.actMin)
+        self.mnHist.addAction(self.actEqualization)
+        self.mnFilter.addAction(self.actCrFilter)
+        self.mnCoder.addAction(self.actCoder)
+        self.mnBinarization.addAction(self.actBinarization)
+        self.mnMorphology.addAction(self.actMorphology)
+        self.menubar.addAction(self.mnFile.menuAction())
+        self.menubar.addAction(self.mnBW.menuAction())
+        self.menubar.addAction(self.mnHist.menuAction())
+        self.menubar.addAction(self.mnFilter.menuAction())
+        self.menubar.addAction(self.mnCoder.menuAction())
+        self.menubar.addAction(self.mnBinarization.menuAction())
+        self.menubar.addAction(self.mnMorphology.menuAction())
+
+    def crtMenuAct(self, name, pname):
+        """Creates menu action"""
+        _translate = QtCore.QCoreApplication.translate
+        menu = QtWidgets.QMenu(self.menubar)
+        menu.setObjectName(pname)
+        self.__dict__[pname] = menu
+        self.__dict__[pname].setTitle(_translate("imgProcUI", name))
+
+
+    def crtSubMenuAct(self, name, pname, trigger, menu):
+        """Creates submenu action"""
+        act = QtWidgets.QAction(self.MainWindow, triggered=trigger)
+        act.setObjectName(pname)
+        self.__dict__[pname] = act
+        menu.addAction(self.__dict__[pname])
+        _translate = QtCore.QCoreApplication.translate
+        self.__dict__[pname].setText(_translate("imgProcUI", name))
+
 
 
 def test_image_out(window):
