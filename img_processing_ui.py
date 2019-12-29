@@ -145,12 +145,16 @@ class Ui_imgProcUI(imgActs, object):
         imgProcUI.setStatusBar(self.statusbar)
 
         self.crtMenu()
+        self.crtSubMenuAct('Дилатация', 'actDilation', self.pfDilation, self.mnMorphology)
+        self.crtSubMenuAct('Эрозия', 'actErosion', self.pfErosion, self.mnMorphology)
+        self.crtSubMenuAct('Размыкание', 'actOpening', self.pfOpening, self.mnMorphology)
+        self.crtSubMenuAct('Замыкание', 'actClosing', self.pfClosing, self.mnMorphology)
+        self.crtSubMenuAct('Ниблэк', 'actNiblack', self.pfNiblack, self.mnBinarization)
+        self.crtSubMenuAct('Оцу', 'actOtsu', self.pfOtsu, self.mnBinarization)
 
         self.retranslateUi(imgProcUI)
         QtCore.QMetaObject.connectSlotsByName(imgProcUI)
 
-        # TODO: убрать позорище
-        self.count = 0
         self._drwFigs()
         self.MainWindow.resizeEvent = self.resizeEvent
 
@@ -196,42 +200,29 @@ class Ui_imgProcUI(imgActs, object):
         QtWidgets.QWidget.resizeEvent(self.MainWindow, *args, **kwargs)
 
     def crtMenu(self):
-        self.actOpen = QtWidgets.QAction(self.MainWindow,
-                                         triggered=self.open)
+        self.actOpen = QtWidgets.QAction(self.MainWindow, triggered=self.open)
         self.actOpen.setObjectName("actOpen")
-        self.actSave = QtWidgets.QAction(self.MainWindow,
-                                         triggered=self._save)
+        self.actSave = QtWidgets.QAction(self.MainWindow, triggered=self._save)
         self.actSave.setObjectName("actSave")
-        self.actAveraging = QtWidgets.QAction(self.MainWindow,
-                                              triggered=self.pfAveraging)
+        self.actAveraging = QtWidgets.QAction(self.MainWindow, triggered=self.pfAveraging)
         self.actAveraging.setObjectName("actAveraging")
-        self.actHumanEye = QtWidgets.QAction(self.MainWindow,
-                                             triggered=self.pfHumanEye)
+        self.actHumanEye = QtWidgets.QAction(self.MainWindow, triggered=self.pfHumanEye)
         self.actHumanEye.setObjectName("actHumanEye")
-        self.actDesaturation = QtWidgets.QAction(self.MainWindow,
-                                                 triggered=self.pfDesaturation)
+        self.actDesaturation = QtWidgets.QAction(self.MainWindow, triggered=self.pfDesaturation)
         self.actDesaturation.setObjectName("actDesaturation")
-        self.actMax = QtWidgets.QAction(self.MainWindow,
-                                        triggered=self.pfMax)
+        self.actMax = QtWidgets.QAction(self.MainWindow, triggered=self.pfMax)
         self.actMax.setObjectName("actMax")
-        self.actMin = QtWidgets.QAction(self.MainWindow,
-                                        triggered=self.pfMin)
+        self.actMin = QtWidgets.QAction(self.MainWindow, triggered=self.pfMin)
         self.actMin.setObjectName("actMin")
-        self.actEqualization = QtWidgets.QAction(self.MainWindow,
-                                                 triggered=self.pfEqualization)
+        self.actEqualization = QtWidgets.QAction(self.MainWindow, triggered=self.pfEqualization)
         self.actEqualization.setObjectName("actEqualization")
-        self.actCrFilter = QtWidgets.QAction(self.MainWindow,
-                                             triggered=self.crtMask)
+        self.actCrFilter = QtWidgets.QAction(self.MainWindow, triggered=self.crtMask)
         self.actCrFilter.setObjectName("actCrFilter")
-        self.actCoder = QtWidgets.QAction(self.MainWindow,
-                                          triggered=self.crtCoder)
+        self.actCoder = QtWidgets.QAction(self.MainWindow, triggered=self.crtCoder)
         self.actCoder.setObjectName("actCoder")
-        # New
-        self.actBinarization = QtWidgets.QAction(self.MainWindow,
-                                                 triggered=self.pfBinarization)
+        self.actBinarization = QtWidgets.QAction(self.MainWindow, triggered=self.pfSimpleBinarization)
         self.actBinarization.setObjectName("actBinarization")
-        self.actMorphology = QtWidgets.QAction(self.MainWindow,
-                                               triggered=self.crtMorphology)  # TODO: another name
+        self.actMorphology = QtWidgets.QAction(self.MainWindow, triggered=self.crtMorphology)  # TODO: another name
         self.actMorphology.setObjectName("actMorphology")
         self.mnFile.addAction(self.actOpen)
         self.mnFile.addAction(self.actSave)

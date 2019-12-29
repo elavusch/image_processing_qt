@@ -8,9 +8,29 @@ from matrix_ui import Ui_Form
 from matrix_morph_ui import Morph_Ui
 from coder_ui import Ui_Coder
 from functools import wraps
+from time import time
 
 
 class imgActs(object):
+
+    def __setattr__(self, *args, **kwargs):
+        """Проверка на workon или crOutput"""
+        tmp = args[1]
+        if args[0] == 'workon':
+            if tmp.width < 200:
+                self.iLabel.setPixmap(tmp.toqpixmap().scaledToWidth(200))
+            else:
+                self.iLabel.setPixmap(tmp.toqpixmap())
+            self.ihst = self.getHist(tmp)
+            self.drwHist(self.ihst, 0)
+        if args[0] == 'crOutput':
+            if tmp.width < 200:
+                self.oLabel.setPixmap(tmp.toqpixmap().scaledToWidth(200))
+            else:
+                self.oLabel.setPixmap(tmp.toqpixmap())
+            self.ohst = self.getHist(tmp)
+            self.drwHist(self.ohst, 1)
+        object.__setattr__(self, *args, **kwargs)
 
     ####################################################################################################################
     ###########################################  Inner   ###############################################################
@@ -20,39 +40,37 @@ class imgActs(object):
         # TODO: обработать отмену выбора файла
         filename, _ = QFileDialog.getOpenFileName(self.MainWindow,
                                                   "Open File",
-                                                  'images/')
+                                                  "images/")
         self.workon = Image.open(filename)
-        self._printIn()
 
     def _printIn(self):
         """Вывод исходного изображения"""
-        self.iLabel.setPixmap(self.workon.toqpixmap())
-        # self.iLabel.adjustSize()
-        self.drwHist(self.getHist(self.workon), 0)
+        pass
 
     def _printOut(self):
         """Вывод обработанного изображения"""
         self.oLabel.setPixmap(self.crOutput.toqpixmap())
+        self.oLabel.adjustSize()
         self.drwHist(self.getHist(self.crOutput), 1)
+        # pass
 
     def _reuse(self):
         """Передача выходного изображения на вход"""
         self.workon = self.crOutput
-        self._printIn()
 
     def _save(self):
-        self.count += 1
-        self.crOutput.save(os.path.join(
-            "C:/Users/elavu/Documents/Анализ изображений/image_processing/image_processing/images",
-            "photo" + str(self.count)), self.crOutput.mode)
+        pass
 
     def _clear(self):
+        # QLabels
         self.iLabel.clear()
         self.oLabel.clear()
+        # Axes
         self.axIn.clear()
-        self.iHist.draw()
         self.axOut.clear()
-        self.oHist.draw()
+        # Figures
+        self.iFig.draw()
+        self.oFig.draw()
 
     def _prepare(self):
         """Исключить, for_each_px"""
@@ -68,15 +86,15 @@ class imgActs(object):
         @wraps(function)
         def wrapper(self, *args, **kwargs):
             self.oLabel.clear()
-            self.crOutput = Image.new(self.workon.mode,
-                                      self.workon.size)
-            draw = ImageDraw.Draw(self.crOutput)
+            out = Image.new(self.workon.mode,
+                            self.workon.size)
+            draw = ImageDraw.Draw(out)
             pix = self.workon.load()
             for i in range(self.workon.width):
                 for j in range(self.workon.height):
                     rs = function(self, pix[i, j])
                     draw.point((i, j), (rs, rs, rs))
-            self._printOut()
+            self.crOutput = out
         return wrapper
 
     def filling_mtr(function):
@@ -91,22 +109,22 @@ class imgActs(object):
                     self.mtr.append(float(obj.mtx.item(i, j).text()))
             self.crtMatrix(m, n)
             self.window.close()
-            function(self)
+            # function(self, *args, **kwargs)
         return wrapper
 
-    # TODO: finish
-    def saving_hst(function):
+    def timer(function):
         @wraps(function)
         def wrapper(self, *args, **kwargs):
-            """Расчет и сохранение гистограммы workon"""
-            print('It works!')
+            start_time = time()
             function(self, *args, **kwargs)
+            print("--- %s: %s seconds ---" % (function.__name__, round((time() - start_time), 3)))
         return wrapper
 
     ####################################################################################################################
     #######################################  Histogram   ###############################################################
     ####################################################################################################################
 
+    @timer
     def _drwFigs(self):
         # TODO: сделать вывод гистограммы
         figIn, figOut = Figure(), Figure()
@@ -114,14 +132,14 @@ class imgActs(object):
         figOut.set_tight_layout({'pad': 0,})
         self.axIn = figIn.add_subplot(111)
         self.axOut = figOut.add_subplot(111)
-        self.iHist, self.oHist = FigureCanvasQTAgg(figIn), FigureCanvasQTAgg(figOut)
-        self.gridLayout.addWidget(self.iHist, 1, 2, 1, 1)
-        self.gridLayout.addWidget(self.oHist, 3, 2, 1, 1)
+        self.iFig, self.oFig = FigureCanvasQTAgg(figIn), FigureCanvasQTAgg(figOut)
+        self.gridLayout.addWidget(self.iFig, 1, 2, 1, 1)
+        self.gridLayout.addWidget(self.oFig, 3, 2, 1, 1)
 
     def drwHist(self, hst, p):
         # TODO: не менять
         ax = self.axIn if p == 0 else self.axOut
-        hist = self.iHist if p == 0 else self.oHist
+        hist = self.iFig if p == 0 else self.oFig
         ax.clear()
         ax.hist(range(256), bins=256, weights=hst, density=1, color='gray')
         ax.set_xmargin(0.01)
@@ -159,22 +177,27 @@ class imgActs(object):
     #########################################  Filters   ###############################################################
     ####################################################################################################################
 
+    @timer
     @for_each_px
     def pfAveraging(self, colors):
         return sum(colors) // 3
 
+    @timer
     @for_each_px
     def pfHumanEye(self, colors):
         return round(.3 * colors[0] + .59 * colors[1] + .11 * colors[2])
 
+    @timer
     @for_each_px
     def pfDesaturation(self, colors):
         return (max(colors) + min(colors)) // 2
 
+    @timer
     @for_each_px
     def pfMax(self, colors):
         return max(colors)
 
+    @timer
     @for_each_px
     def pfMin(self, colors):
         return min(colors)
@@ -198,7 +221,7 @@ class imgActs(object):
         self.window.ui.confirm.clicked.connect(self.pfFilter)
         self.window.ui.lnHor.editingFinished.connect(self.cfHor)
         self.window.ui.lnVer.editingFinished.connect(self.cfVer)
-        self.window.ui.gaussBtn.clicked.connect(self.pfGauss)
+        # self.window.ui.gaussBtn.clicked.connect(self.pfGauss)
         self.window.show()
 
     def crtCoder(self):
@@ -217,7 +240,8 @@ class imgActs(object):
         self.crtWindow(Morph_Ui)
 
         # buttons
-        self.window.ui.confirm.clicked.connect(self.pfMorphology)
+        # self.window.ui.confirm.clicked.connect(partial
+        self.window.ui.confirm.clicked.connect(self.pfZero)
         self.window.ui.lnHor.editingFinished.connect(self.cfHor)
         self.window.ui.lnVer.editingFinished.connect(self.cfVer)
         self.window.show()
@@ -253,7 +277,7 @@ class imgActs(object):
         self._printOut()
 
     @filling_mtr
-    def pfFilter(self):
+    def pfFilter(self, *args, **kwargs):
         """Проход по пикселам внутри рамки"""
         m, n = len(self.mtr), len(self.mtr[0])
         dx, dy = (n - 1) // 2, (m - 1) // 2
@@ -264,21 +288,21 @@ class imgActs(object):
 
         px = tmp.load()
 
-        self.crOutput = Image.new(self.workon.mode,
-                                  self.workon.size)
-        draw = ImageDraw.Draw(self.crOutput)
+        out = Image.new(self.workon.mode,
+                        self.workon.size)
+        draw = ImageDraw.Draw(out)
 
         h = tmp.height - dy
         w = tmp.width - dx
         for y in range(dy, h):
             for x in range(dx, w):
                 self.filter(x, y, px, draw)
-        self._printOut()
+        self.crOutput = out
 
     # TODO: совместить с pfFilter
-    @filling_mtr
-    def pfMorphology(self):
-        """Проход по пикселам внутри рамки"""
+    # TODO: refactoring
+    @timer
+    def pfMorphology(self, cs):
         m, n = len(self.mtr), len(self.mtr[0])
         dx, dy = (n - 1) // 2, (m - 1) // 2
 
@@ -292,24 +316,55 @@ class imgActs(object):
         px = tmp.load()
 
         # выходное изображение
-        self.crOutput = Image.new('1', self.workon.size)
+        out = Image.new('1', self.workon.size)
 
         # поверхность для рисования на выходном изображении
-        draw = ImageDraw.Draw(self.crOutput)
+        draw = ImageDraw.Draw(out)
 
         # сдвиги для правильного прохода
         h = tmp.height - dy
         w = tmp.width - dx
-        for y in range(dy, h):
-            for x in range(dx, w):
-                self.morph(x, y, px, draw)
+        if cs == 0:
+            for y in range(dy, h):
+                for x in range(dx, w):
+                        self.erode(x, y, px, draw)
+            out = out.crop((dx, dy, w, h))  # TODO: WTF
+        elif cs == 1:
+            out = Image.new('1', tmp.size)
+            draw = ImageDraw.Draw(out)
+            for y in range(dy, h):  # range(tmp.height):
+                for x in range(dx, w):  # range(tmp.width):
+                    self.dilate(x, y, px, draw, out)
+            out = out.crop((dx, dy, w, h))
+        elif cs == 2:
+            for y in range(dy, h):  # range(tmp.height):
+                for x in range(dx, w):  # range(tmp.width):
+                    self.intensity(x, y, 3, .2, px, draw)
+        self.crOutput = out
 
-        self._printOut()
+    def pfDilation(self):
+        self.pfMorphology(1)
 
-    def pfGauss(self):
-        """Фильтр Гаусса"""
-        # TODO: задать фильтр для границ
-        # TODO: вывести фильтр в таблицу
+    def pfErosion(self):
+        self.pfMorphology(0)
+
+    def pfOpening(self):
+        try:
+            self.pfErosion()
+            self._reuse()
+            self.pfDilation()
+        except Exception as e:
+            print(e)
+
+    def pfClosing(self):
+        self.pfDilation()
+        self._reuse()
+        self.pfErosion()
+
+    # it was Gauss
+    @filling_mtr
+    def pfZero(self):
+        """Пустая функция"""
         pass
 
     def pfCoder(self):
@@ -347,17 +402,44 @@ class imgActs(object):
         # Декодирование и вывод результата
         obj.lnResDecoder.setText(self.ariphmeticDecoding(code))
 
-    def pfBinarization(self):
+    def pfSimpleBinarization(self, threshold=128):
         px = ImageOps.grayscale(self.workon).load()
-        self.crOutput = Image.new('1', self.workon.size)
-        draw = ImageDraw.Draw(self.crOutput)
+        out = Image.new('1', self.workon.size)
+        draw = ImageDraw.Draw(out)
 
         for i in range(self.workon.width):
             for j in range(self.workon.height):
                 # TODO: задавать порог
-                if px[i, j] > 128:
+                if px[i, j] > threshold:
                     draw.point((i, j), 1)
-        self._printOut()
+        self.crOutput = out
+
+    def pfNiblack(self):
+        self.mtr = [[0 for i in range(3)] for i in range(3)]
+        self.pfMorphology(2)
+
+    def pfOtsu(self):
+        """Вычисление порога по гистограмме"""
+        # нормализация гистограммы
+        N = sum(self.ihst)
+        hst = [i / N for i in self.ihst]
+        # инициализация
+        w1 = hst[0]
+        w2 = 1 - w1
+        mu1 = 0
+        mu2 = sum([i * hst[i] for i in range(1, len(hst))])
+        var_b, t = 0, 1
+        for i in range(1, len(hst)):
+            w1 += hst[i]
+            w2 -= hst[i]
+            mu1 += i * hst[i]
+            mu2 -= i * hst[i]
+            if w1 != 0 and w2 != 0:
+                var_tmp = w1 * w2 * (((mu1 / w1) - (mu2 / w2)) ** 2)
+                if var_tmp > var_b:
+                    var_b = var_tmp
+                    t = i
+        self.pfSimpleBinarization(t)
 
     ####################################################################################################################
     #########################################  Confirm   ###############################################################
@@ -401,15 +483,57 @@ class imgActs(object):
                 sb += self.mtr[i][j] * b
         draw.point((x - 1, y - 1), (round(sr), round(sg), round(sb)))
 
-    def morph(self, x, y, px, draw):
-        """Морфология"""
+    def dilate(self, x, y, px, draw, out):
+        """Дилатация"""
         m, n = len(self.mtr), len(self.mtr[0])
         dx, dy = (n - 1) // 2, (m - 1) // 2
         # TODO: добавить любой символ
-        if self.mtr[1][1] == px[x, y]:
+        cx, cy = n // 2, m // 2
+        if self.mtr[cx][cy] == px[x, y]:
+            # rows - y
             for i in range(m):
+                # columns - x
                 for j in range(n):
-                    draw.point((x - dx + j, y - dy + i), int(self.mtr[i][j]))
+                    try:
+                        draw.point((x - dx + j, y - dy + i),
+                                   int(out.getpixel((x - dx + j, y - dy + i)) or
+                                       self.mtr[j][i] or
+                                       px[x - dx + j, y - dy + i]))
+                    except Exception as err:
+                        pass
+                        # print(err)
+                        # print(x-dx+j, y-dy+i)
+
+    def erode(self, x, y, px, draw):
+        """"Эрозия"""
+        m, n = len(self.mtr), len(self.mtr[0])  # TODO: remove calculation
+        dx, dy = (n - 1) // 2, (m - 1) // 2  # TODO: remove calculation
+        # TODO: добавить любой символ
+        cx, cy = n // 2, m // 2  # TODO: remove calculation
+        flag = True
+        # rows - y
+        for i in range(m):
+            # columns - x
+            for j in range(n):
+                # condition
+                if (self.mtr[i][j] == 1) and (px[x - dx + j, y - dy + i] != self.mtr[i][j]):
+                    flag = False
+                    break
+        if flag: draw.point((x, y), int(self.mtr[cy][cx]))
+
+    def intensity(self, x, y, n, k, px, draw):
+        """расчет интенсивности для Ниблэка в точке"""
+        dx = (n - 1) // 2
+        dy = dx
+        ls = []
+        for i in range(n):
+            for j in range(n):
+                ls.append(px[x - dx + j, y - dy + i][0])
+        mean = sum(ls) / len(ls)
+        std = (sum((xi - mean) ** 2 for xi in ls) / len(ls)) ** (1 / 2)
+        I = mean - k * std
+        if px[x, y][0] > I:
+            draw.point((x, y), 1)
 
     def ariphmeticCoding(self, msg: str) -> 'cdSmb':
         res = cdSmb(0, 1)
